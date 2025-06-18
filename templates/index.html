@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classificador de Estudante</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .title {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.1em;
+            margin-bottom: 30px;
+        }
+
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 40px;
+            margin: 30px 0;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: #f8f9ff;
+        }
+
+        .upload-area:hover {
+            border-color: #764ba2;
+            background: #f0f2ff;
+            transform: translateY(-2px);
+        }
+
+        .upload-area.dragover {
+            border-color: #764ba2;
+            background: #e8ebff;
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 3em;
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        .upload-text {
+            font-size: 1.2em;
+            color: #555;
+            margin-bottom: 15px;
+        }
+
+        .upload-subtext {
+            color: #888;
+            font-size: 0.9em;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .preview-container {
+            margin: 30px 0;
+            display: none;
+        }
+
+        .preview-image {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .result-container {
+            margin: 30px 0;
+            padding: 25px;
+            border-radius: 15px;
+            display: none;
+        }
+
+        .result-success {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+
+        .result-error {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+            color: white;
+        }
+
+        .result-title {
+            font-size: 1.4em;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .result-details {
+            font-size: 1.1em;
+            line-height: 1.6;
+        }
+
+        .confidence-bar {
+            background: rgba(255,255,255,0.3);
+            border-radius: 10px;
+            height: 20px;
+            margin: 15px 0;
+            overflow: hidden;
+        }
+
+        .confidence-fill {
+            background: rgba(255,255,255,0.8);
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+
+        .loading {
+            display: none;
+            margin: 20px 0;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-online {
+            background: #4CAF50;
+            animation: pulse 2s infinite;
+        }
+
+        .status-offline {
+            background: #f44336;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(76, 175, 80, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); }
+        }
+
+        .footer {
+            margin-top: 30px;
+            color: #888;
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+                margin: 10px;
+            }
+            
+            .title {
+                font-size: 2em;
+            }
+            
+            .upload-area {
+                padding: 30px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">🎓 Classificador de Estudante</h1>
+        <p class="subtitle">Sistema de reconhecimento para identificar o aluno específico</p>
+        
+        <div class="status-check">
+            <span class="status-indicator" id="statusIndicator"></span>
+            <span id="statusText">Verificando conexão...</span>
+        </div>
+
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-icon">📸</div>
+            <div class="upload-text">Clique para selecionar uma imagem</div>
+            <div class="upload-subtext">ou arraste e solte aqui</div>
+            <div class="upload-subtext">Formatos aceitos: PNG, JPG, JPEG, GIF</div>
+        </div>
+
+        <input type="file" id="fileInput" class="file-input" accept=".png,.jpg,.jpeg,.gif">
+        
+        <div class="preview-container" id="previewContainer">
+            <img id="previewImage" class="preview-image" alt="Preview">
+        </div>
+
+        <button class="btn" id="uploadBtn" onclick="document.getElementById('fileInput').click()">
+            📁 Selecionar Imagem
+        </button>
+        
+        <button class="btn" id="predictBtn" onclick="predictImage()" disabled>
+            🔍 Analisar Imagem
+        </button>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Processando imagem...</p>
+        </div>
+
+        <div class="result-container" id="resultContainer">
+            <div class="result-title" id="resultTitle"></div>
+            <div class="result-details" id="resultDetails"></div>
+            <div class="confidence-bar">
+                <div class="confidence-fill" id="confidenceFill"></div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Sistema desenvolvido com TensorFlow e Flask</p>
+        </div>
+    </div>
+
+    <script>
+        let selectedFile = null;
+        let isServerOnline = false;
+
+        // Verificar status do servidor
+        async function checkServerStatus() {
+            try {
+                const response = await fetch('/health');
+                const data = await response.json();
+                
+                const indicator = document.getElementById('statusIndicator');
+                const statusText = document.getElementById('statusText');
+                
+                if (data.status === 'healthy' && data.model_loaded) {
+                    indicator.className = 'status-indicator status-online';
+                    statusText.textContent = 'Sistema online e modelo carregado';
+                    isServerOnline = true;
+                } else {
+                    indicator.className = 'status-indicator status-offline';
+                    statusText.textContent = 'Sistema offline ou modelo não carregado';
+                    isServerOnline = false;
+                }
+            } catch (error) {
+                const indicator = document.getElementById('statusIndicator');
+                const statusText = document.getElementById('statusText');
+                indicator.className = 'status-indicator status-offline';
+                statusText.textContent = 'Erro de conexão com o servidor';
+                isServerOnline = false;
+            }
+        }
+
+        // Configurar upload de arquivo
+        function setupFileUpload() {
+            const fileInput = document.getElementById('fileInput');
+            const uploadArea = document.getElementById('uploadArea');
+            const previewContainer = document.getElementById('previewContainer');
+            const previewImage = document.getElementById('previewImage');
+            const predictBtn = document.getElementById('predictBtn');
+
+            // Click no upload area
+            uploadArea.addEventListener('click', () => {
+                fileInput.click();
+            });
+
+            // Drag and drop
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('dragover');
+            });
+
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleFile(files[0]);
+                }
+            });
+
+            // Seleção de arquivo
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    handleFile(e.target.files[0]);
+                }
+            });
+        }
+
+        // Processar arquivo selecionado
+        function handleFile(file) {
+            // Verificar tipo de arquivo
+            const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif'];
+            if (!allowedTypes.includes(file.type)) {
+                showError('Tipo de arquivo não suportado. Use PNG, JPG, JPEG ou GIF.');
+                return;
+            }
+
+            // Verificar tamanho (máximo 16MB)
+            if (file.size > 16 * 1024 * 1024) {
+                showError('Arquivo muito grande. Máximo permitido: 16MB.');
+                return;
+            }
+
+            selectedFile = file;
+
+            // Mostrar preview
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const previewImage = document.getElementById('previewImage');
+                const previewContainer = document.getElementById('previewContainer');
+                
+                previewImage.src = e.target.result;
+                previewContainer.style.display = 'block';
+                
+                // Habilitar botão de predição
+                const predictBtn = document.getElementById('predictBtn');
+                predictBtn.disabled = false;
+            };
+            reader.readAsDataURL(file);
+
+            // Limpar resultados anteriores
+            hideResults();
+        }
+
+        // Fazer predição
+        async function predictImage() {
+            if (!selectedFile) {
+                showError('Nenhuma imagem selecionada.');
+                return;
+            }
+
+            if (!isServerOnline) {
+                showError('Servidor offline. Verifique a conexão.');
+                return;
+            }
+
+            // Mostrar loading
+            showLoading();
+
+            try {
+                const formData = new FormData();
+                formData.append('file', selectedFile);
+
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                
+                hideLoading();
+
+                if (result.success) {
+                    showResult(result);
+                } else {
+                    showError(result.error || 'Erro desconhecido na predição.');
+                }
+
+            } catch (error) {
+                hideLoading();
+                showError('Erro de conexão: ' + error.message);
+            }
+        }
+
+        // Mostrar resultado
+        function showResult(result) {
+            const container = document.getElementById('resultContainer');
+            const title = document.getElementById('resultTitle');
+            const details = document.getElementById('resultDetails');
+            const confidenceFill = document.getElementById('confidenceFill');
+
+            // Determinar se é o aluno alvo
+            const isTarget = result.is_target_student;
+            const confidence = result.confidence;
+            const confidencePercent = (confidence * 100).toFixed(1);
+
+            // Configurar aparência baseada no resultado
+            container.className = 'result-container result-success';
+            
+            // Título
+            if (isTarget) {
+                title.innerHTML = '✅ É o Aluno Específico!';
+            } else {
+                title.innerHTML = '❌ NÃO é o Aluno Específico';
+            }
+
+            // Detalhes
+            let detailsHTML = `
+                <div><strong>Confiança:</strong> ${confidencePercent}%</div>
+                <div><strong>Interpretação:</strong> ${result.interpretation || 'N/A'}</div>
+            `;
+
+            if (result.all_probabilities) {
+                detailsHTML += '<div style="margin-top: 15px;"><strong>Detalhes:</strong></div>';
+                for (const [className, prob] of Object.entries(result.all_probabilities)) {
+                    const displayName = className === 'aluno_target' ? 'Aluno Específico' : 'Outras Pessoas';
+                    detailsHTML += `<div>• ${displayName}: ${(prob * 100).toFixed(1)}%</div>`;
+                }
+            }
+
+            details.innerHTML = detailsHTML;
+
+            // Barra de confiança
+            confidenceFill.style.width = confidencePercent + '%';
+
+            // Mostrar resultado
+            container.style.display = 'block';
+        }
+
+        // Mostrar erro
+        function showError(message) {
+            const container = document.getElementById('resultContainer');
+            const title = document.getElementById('resultTitle');
+            const details = document.getElementById('resultDetails');
+
+            container.className = 'result-container result-error';
+            title.innerHTML = '❌ Erro';
+            details.innerHTML = message;
+            
+            document.getElementById('confidenceFill').style.width = '0%';
+            container.style.display = 'block';
+        }
+
+        // Mostrar loading
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('predictBtn').disabled = true;
+        }
+
+        // Esconder loading
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('predictBtn').disabled = false;
+        }
+
+        // Esconder resultados
+        function hideResults() {
+            document.getElementById('resultContainer').style.display = 'none';
+        }
+
+        // Inicializar aplicação
+        document.addEventListener('DOMContentLoaded', () => {
+            setupFileUpload();
+            checkServerStatus();
+            
+            // Verificar status a cada 30 segundos
+            setInterval(checkServerStatus, 30000);
+        });
+    </script>
+</body>
+</html>
